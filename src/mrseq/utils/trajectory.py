@@ -391,6 +391,8 @@ def spiral_acquisition(
     time_to_echo
         Time to echo from beginning of gradients (in seconds).
     """
+    if spiral_type not in ['in-out', 'out']:
+        raise ValueError(f'Spiral type "{spiral_type}" not valid. Valid spiral types are "in-out" or "out".')
     # calculate single spiral trajectory
     traj, grad, _s, _timing, _r, _theta, n_spirals_undersampling, fov_scaling_center, fov_scaling_edge = (
         undersampled_variable_density_spiral(system, n_readout, fov, undersampling_factor)
