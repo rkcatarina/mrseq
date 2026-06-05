@@ -7,6 +7,7 @@ import pypulseq as pp
 
 from mrseq.utils import round_to_raster
 from mrseq.utils import sys_defaults
+from mrseq.utils import write_sequence
 
 
 def t2_tse_cartesian_kernel(
@@ -195,6 +196,14 @@ def t2_tse_cartesian_kernel(
             system=system,
         )
 
+        # Combine phase encoding along se and crusher along z-direction
+        gz_crush_pre = pp.make_trapezoid(
+            channel='z', system=system, area=gz_crusher_area + gz_areas[se], duration=gz_crusher_duration
+        )
+        gz_crush_rew = pp.make_trapezoid(
+            channel='z', system=system, area=gz_crusher_area - gz_areas[se], duration=gz_crusher_duration
+        )
+
         for pe in range(n_phase_encoding):
             pe_label = pp.make_label(type='SET', label='LIN', value=int(pe))
 
@@ -217,9 +226,9 @@ def t2_tse_cartesian_kernel(
                 echo_label = pp.make_label(type='SET', label='ECO', value=int(echo))
 
                 # add refocusing pulse with crusher gradients
-                seq.add_block(gz_crush)
+                seq.add_block(gz_crush if echo == 0 else gz_crush_rew)
                 seq.add_block(rf_ref, gz_ref)
-                seq.add_block(gz_crush)
+                seq.add_block(gz_crush_pre)
 
                 seq.add_block(pp.make_delay(tau2))
 
@@ -249,15 +258,16 @@ def main(
     system: pp.Opts | None = None,
     te: float | None = None,
     n_echoes: int = 10,
-    tr: float = 4,
-    fov_xy: float = 128e-3,
-    fov_z: float = 80e-3,
-    n_readout: int = 128,
-    n_phase_encoding: int = 128,
-    n_slice_encoding=10,
+    tr: float = 2,
+    fov_xy: float = 200e-3,
+    fov_z: float = 8e-3,
+    n_readout: int = 200,
+    n_phase_encoding: int = 200,
+    n_slice_encoding: int = 1,
     show_plots: bool = True,
     test_report: bool = True,
     timing_check: bool = True,
+    v141_compatibility: bool = True,
 ) -> tuple[pp.Sequence, Path]:
     """Generate Cartesian TSE sequence for T2-mapping.
 
@@ -287,6 +297,8 @@ def main(
         Toggles advanced test report.
     timing_check
         Toggles timing check of the sequence.
+    v141_compatibility
+        Save the sequence in pulseq v1.4.1 for backwards compatibility.
     """
     if system is None:
         system = sys_defaults
@@ -294,7 +306,7 @@ def main(
     # define ADC and gradient timing
     readout_oversampling = 2
     adc_dwell = system.grad_raster_time
-    gx_pre_duration = 1.0e-3  # duration of readout pre-winder gradient [s]
+    gx_pre_duration = 1.84e-3  # duration of readout pre-winder gradient [s]
     gx_flat_time = n_readout * adc_dwell  # flat time of readout gradient [s]
 
     gz_crusher_duration = 1.6e-3  # duration of crusher gradients [s]
@@ -358,7 +370,7 @@ def main(
     output_path = Path.cwd() / 'output'
     output_path.mkdir(parents=True, exist_ok=True)
     print(f"\nSaving sequence file '{filename}.seq' into folder '{output_path}'.")
-    seq.write(str(output_path / filename), create_signature=True)
+    write_sequence(seq, str(output_path / filename), create_signature=True, v141_compatibility=v141_compatibility)
 
     if show_plots:
         seq.plot(time_range=(0, te_list[-1] * 1.2))

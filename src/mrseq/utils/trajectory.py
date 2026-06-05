@@ -390,6 +390,8 @@ def spiral_acquisition(
         K-space trajectory.
     time_to_echo
         Time to echo from beginning of gradients (in seconds).
+    max_grad_duration
+        Maximum duration of the gradients.
     """
     if spiral_type not in ['in-out', 'out']:
         raise ValueError(f'Spiral type "{spiral_type}" not valid. Valid spiral types are "in-out" or "out".')
@@ -498,7 +500,7 @@ def spiral_acquisition(
             gy_pre[i].delay = max_pre_duration - gy_pre[i].shape_dur
             gx_pre[i].delay = max_pre_duration - gx_pre[i].shape_dur
     else:
-        max_pre_duration = 0.0
+        max_pre_duration = adc.delay
 
     def combine_gradients(*grad_objects, channel):
         grad_list = [grad for grad in grad_objects if grad is not None]  # Remove None
@@ -527,4 +529,10 @@ def spiral_acquisition(
 
     time_to_echo = max_pre_duration + n_samples_to_echo * readout_oversampling * adc.dwell
 
-    return gx_combined, gy_combined, adc, trajectory, time_to_echo
+    max_grad_duration = 0
+    if spiral_type == 'out':
+        for i in range(len(gx_combined)):
+            if max(pp.calc_duration(gx_combined[i]), pp.calc_duration(gy_combined[i])) > max_grad_duration:
+                max_grad_duration = max(pp.calc_duration(gx_combined[i]), pp.calc_duration(gy_combined[i]))
+
+    return gx_combined, gy_combined, adc, trajectory, time_to_echo, max_grad_duration

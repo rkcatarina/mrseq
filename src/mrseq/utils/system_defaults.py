@@ -10,6 +10,7 @@ from pypulseq.opts import Opts
 #     rf_ringdown_time=30e-6,
 #     rf_dead_time=100e-6,
 #     adc_dead_time=10e-6,
+#     B0 = 2.89
 # )
 
 # System settings for low-field 0.55T scanner in Chile
@@ -21,4 +22,5 @@ sys_defaults = Opts(
     rf_ringdown_time=20e-6,
     rf_dead_time=100e-6,
     adc_dead_time=10e-6,
+    B0=0.55,
 )
