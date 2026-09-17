@@ -147,7 +147,7 @@ def t2_t1rho_tse_spiral_kernel(
         use='refocusing',
     )
     # create readout gradient and ADC
-    gx, gy, adc, trajectory, time_to_echo, max_grad_duration = spiral_acquisition(
+    gx, gy, adc, trajectory, time_to_echo = spiral_acquisition(
         system,
         n_readout,
         fov_xy,
@@ -157,7 +157,8 @@ def t2_t1rho_tse_spiral_kernel(
         max_pre_duration=gx_pre_duration,
         spiral_type=spiral_type,
     )
-
+    
+   
     delta_array = np.pi / len(gx) * np.arange(len(gx))  # angle difference between subsequent spirals
 
     # phase encoding along slice direction
@@ -182,9 +183,15 @@ def t2_t1rho_tse_spiral_kernel(
     min_tau2 += time_to_echo
 
     # tau3: between readout and next refocusing pulse
-
+    if spiral_type == 'out':
+        max_grad_duration=0
+        for i in range(len(gx)):
+            if max(pp.calc_duration(gx[i]),pp.calc_duration(gy[i])) > max_grad_duration:
+                max_grad_duration= max(pp.calc_duration(gx[i]),pp.calc_duration(gy[i]))
+            
     min_tau3 = time_to_echo
-    min_tau3 += max_grad_duration
+    if spiral_type == 'out':
+        min_tau3 += max_grad_duration
     min_tau3 += gz_crusher_duration
     min_tau3 += max(rf_ref.delay, gz_ref.delay + gz_ref.rise_time)
     min_tau3 += rf_ref.shape_dur / 2
@@ -367,8 +374,8 @@ def main(
         Field of view in x and y direction (in meters).
     fov_z
         Field of view along z (in meters).
-    spiral_type
-        Type of spiral trajectory.
+    spiral_type 
+        Type of spiral trajectory. 
     n_readout
         Number of frequency encoding steps.
     readout_oversampling
@@ -393,18 +400,18 @@ def main(
     modified = False
     if spin_lock_times is None:
         spin_lock_times = np.array([0.025, 0.050, 0.1])
-    elif spin_lock_times is not None and len(spin_lock_times) > 1:
+    elif spin_lock_times is not None  and len(spin_lock_times) > 1:
         modified = True
 
     # define settings of spin-lock preparation pulse
     rf_spin_lock_duration = 2e-3
-    spin_lock_amplitude = 2.5e-6
+    spin_lock_amplitude = 3e-6
     add_spin_lock_spoiler = True
     spin_lock_spoiler_ramp_time = 6e-4
     spin_lock_spoiler_flat_time = 8.4e-3
 
     # define ADC and gradient timing
-    gx_pre_duration = 1.0e-3  # duration of readout pre-winder gradient [s]
+    gx_pre_duration = 1.84e-3  # duration of readout pre-winder gradient [s]
 
     gz_crusher_duration = 1.6e-3  # duration of crusher gradients [s]
     gz_crusher_area = 4 / (fov_z / n_slice_encoding)
@@ -417,11 +424,11 @@ def main(
 
     # define sequence filename
     filename = f'{Path(__file__).stem}_{spiral_type}_{tr}tr_{len(spin_lock_times)}spl'
-    filename += f'_{spin_lock_amplitude * 1000000}splAmp'
+    filename += f'_{spin_lock_amplitude*1000000}splAmp'
     filename += f'_{int(fov_xy * 1000)}fov_xy_{int(fov_z * 1000)}_fov_z'
     if modified:
-        filename += '_splModified'
-    # filename += f'{n_readout}nx_{n_phase_encoding}ny_{n_slice_encoding}nz'
+        filename += f'_splModified'
+    #filename += f'{n_readout}nx_{n_phase_encoding}ny_{n_slice_encoding}nz'
 
     output_path = Path.cwd() / 'output'
     output_path.mkdir(parents=True, exist_ok=True)
@@ -484,6 +491,7 @@ def main(
     print(f"\nSaving sequence file '{filename}.seq' into folder '{output_path}'.")
     write_sequence(seq, str(output_path / filename), create_signature=True, v141_compatibility=v141_compatibility)
 
+
     if show_plots:
         seq.plot(time_range=(0, te_list[-1] * 1.2))
 
@@ -491,4 +499,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main()
+    main(spiral_type='in-out', v141_compatibility=True)
+
+#spin_lock_times = np.array([0.02, 0.04, 0.06])
