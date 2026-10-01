@@ -258,7 +258,7 @@ def main(
     system: pp.Opts | None = None,
     te: float | None = None,
     n_echoes: int = 10,
-    tr: float = 2,
+    tr: float = 1,
     fov_xy: float = 200e-3,
     fov_z: float = 8e-3,
     n_readout: int = 200,
@@ -306,10 +306,10 @@ def main(
     # define ADC and gradient timing
     readout_oversampling = 2
     adc_dwell = system.grad_raster_time
-    gx_pre_duration = 1.84e-3  # duration of readout pre-winder gradient [s]
+    gx_pre_duration = 1.81e-3  # duration of readout pre-winder gradient [s]
     gx_flat_time = n_readout * adc_dwell  # flat time of readout gradient [s]
 
-    gz_crusher_duration = 1.6e-3  # duration of crusher gradients [s]
+    gz_crusher_duration = 1.95e-3  # duration of crusher gradients [s]
     gz_crusher_area = 4 / (fov_z / n_slice_encoding)
 
     # define settings of rf excitation pulse

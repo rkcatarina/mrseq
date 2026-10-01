@@ -114,7 +114,7 @@ def t2_t1rho_tse_cartesian_kernel(
         duration=rf_ex_duration,
         slice_thickness=fov_z,
         apodization=0.5,
-        phase_offset=0,
+        phase_offset=np.pi / 2,
         time_bw_product=rf_ex_bwt,
         delay=system.rf_dead_time,  # delay should equal at least the dead time of the RF pulse
         system=system,
@@ -128,7 +128,7 @@ def t2_t1rho_tse_cartesian_kernel(
         duration=rf_ref_duration,
         slice_thickness=fov_z * rf_ref_width_scale_factor,
         apodization=0.5,
-        phase_offset=np.pi / 2,
+        phase_offset=0,
         time_bw_product=rf_ref_bwt,
         delay=system.rf_dead_time,  # delay should equal at least the dead time of the RF pulse
         system=system,
@@ -350,25 +350,23 @@ def main(
     if system is None:
         system = sys_defaults
 
-    modified = False
     if spin_lock_times is None:
-        spin_lock_times = np.array([0.025, 0.050, 0.1])
-    elif spin_lock_times is not None and len(spin_lock_times) > 1:
-        modified = True
+        spin_lock_times = (0,)
+    
 
     # define settings of spin-lock preparation pulse
     rf_spin_lock_duration = 2e-3
-    spin_lock_amplitude = 2.5e-6
+    spin_lock_amplitude = 4e-6
     add_spin_lock_spoiler = True
     spin_lock_spoiler_ramp_time = 6e-4
     spin_lock_spoiler_flat_time = 8.4e-3
 
     # define ADC and gradient timing
     adc_dwell = system.grad_raster_time
-    gx_pre_duration = 1.21e-3  # duration of readout pre-winder gradient [s]
+    gx_pre_duration = 1.81e-3  # duration of readout pre-winder gradient [s]
     gx_flat_time = n_readout * adc_dwell  # flat time of readout gradient [s]
 
-    gz_crusher_duration = 1.6e-3  # duration of crusher gradients [s]
+    gz_crusher_duration = 1.95e-3  # duration of crusher gradients [s]
     gz_crusher_area = 4 / (fov_z / n_slice_encoding)
 
     # define settings of rf excitation pulse
@@ -381,8 +379,7 @@ def main(
     filename = f'{Path(__file__).stem}_{tr}tr_{len(spin_lock_times)}spl'
     filename += f'_{spin_lock_amplitude * 1000000}splAmp'
     filename += f'_{int(fov_xy * 1000)}fov_xy_{int(fov_z * 1000)}_fov_z'
-    if modified:
-        filename += '_splModified'
+    
     # filename += f'{n_readout}nx_{n_phase_encoding}ny_{n_slice_encoding}nz'
 
     output_path = Path.cwd() / 'output'
@@ -440,6 +437,7 @@ def main(
     te_list = np.cumsum((te,) * n_echoes if te else (min_te,) * n_echoes)
     seq.set_definition('TE', te_list.tolist())
     seq.set_definition('TR', tr)
+    seq.set_definition('ReadoutOversamplingFactor', readout_oversampling)
 
     # save seq-file to disk
     print(f"\nSaving sequence file '{filename}.seq' into folder '{output_path}'.")
@@ -452,4 +450,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main()
+    main(tr=1,spin_lock_times=(0,), v141_compatibility=True)
+
+#spin_lock_times = np.array([0.02, 0.04, 0.06])
