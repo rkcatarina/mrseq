@@ -363,10 +363,10 @@ def main(
 
     # define ADC and gradient timing
     adc_dwell = system.grad_raster_time
-    gx_pre_duration = 1.81e-3  # duration of readout pre-winder gradient [s]
+    gx_pre_duration = 1.3e-3  # duration of readout pre-winder gradient [s]
     gx_flat_time = n_readout * adc_dwell  # flat time of readout gradient [s]
 
-    gz_crusher_duration = 1.95e-3  # duration of crusher gradients [s]
+    gz_crusher_duration = 1.6e-3  # duration of crusher gradients [s]
     gz_crusher_area = 4 / (fov_z / n_slice_encoding)
 
     # define settings of rf excitation pulse
@@ -450,6 +450,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main(tr=1,spin_lock_times=(0,), v141_compatibility=True)
+    main(tr=1,spin_lock_times = (0,), v141_compatibility=True)
 
 #spin_lock_times = np.array([0.02, 0.04, 0.06])
