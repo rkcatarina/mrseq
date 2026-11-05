@@ -100,6 +100,8 @@ def t2_t1rho_tse_cartesian_kernel(
     -------
     seq
         PyPulseq Sequence object
+    time_to_first_tr_block
+        End point of first TR block.
     min_te
         Shortest possible echo time.
     """
@@ -287,10 +289,15 @@ def t2_t1rho_tse_cartesian_kernel(
 
                 duration_tr_block = sum(seq.block_durations.values()) - _start_time_tr_block
                 tr_delay = round_to_raster(tr - duration_tr_block, system.block_duration_raster)
+
+                # save time for sequence plot
+                if tsl_idx == 0 and pe == 0:
+                    time_to_first_tr_block = duration_tr_block
                 if tr_delay < 0:
                     raise ValueError('Desired TR too short for given sequence parameters.')
                 seq.add_block(pp.make_delay(tr_delay))
-    return seq, min_te
+
+    return seq, time_to_first_tr_block, min_te
 
 
 def main(
@@ -310,7 +317,7 @@ def main(
     timing_check: bool = True,
     v141_compatibility: bool = True,
 ) -> tuple[pp.Sequence, Path]:
-    """Generate Cartesian TSE sequence for T2-mapping.
+    """Generate Cartesian TSE-based sequence for T1rho-mapping.
 
     Parameters
     ----------
@@ -389,7 +396,7 @@ def main(
     if (output_path / Path(filename + '_header.h5')).exists():
         (output_path / Path(filename + '_header.h5')).unlink()
 
-    seq, min_te = t2_t1rho_tse_cartesian_kernel(
+    seq,time_to_first_tr_block, min_te = t2_t1rho_tse_cartesian_kernel(
         system=system,
         spin_lock_times=spin_lock_times,
         te=te,
@@ -433,18 +440,39 @@ def main(
 
     # write all required parameters in the seq-file header/definitions
     seq.set_definition('FOV', [fov_xy, fov_xy, fov_z])
-    seq.set_definition('ReconMatrix', (n_readout, n_readout, 1))
+    seq.set_definition('ReconMatrix', (n_readout, n_readout, n_slice_encoding))
     te_list = np.cumsum((te,) * n_echoes if te else (min_te,) * n_echoes)
     seq.set_definition('TE', te_list.tolist())
     seq.set_definition('TR', tr)
     seq.set_definition('ReadoutOversamplingFactor', readout_oversampling)
+    seq.set_definition('SpinLockTimes', spin_lock_times.tolist())
+    seq.set_definition('SpinLockSpoilerRampTime', spin_lock_spoiler_ramp_time)
+    seq.set_definition('SpinLockSpoilerFlatTime', spin_lock_spoiler_flat_time)
+    seq.set_definition('AddSpinLockSpoiler', add_spin_lock_spoiler)
+    seq.set_definition('RFSpinLockDuration', rf_spin_lock_duration)
+    seq.set_definition('SpinLockAmplitude', spin_lock_amplitude)
+    seq.set_definition('RFExcitationDuration', rf_ex_duration)
+    seq.set_definition('RFExcitationBWT', rf_ex_bwt)
+    seq.set_definition('RFRefocusingDuration', rf_ex_duration * 2)
+    seq.set_definition('RFRefocusingBWT', rf_ex_bwt)    
+    seq.set_definition('RFRefocusingWidthScaleFactor', rf_ref_width_scale_factor)
+    seq.set_definition('GxPreDuration', gx_pre_duration)
+    seq.set_definition('GzCrusherDuration', gz_crusher_duration)
+    seq.set_definition('GzCrusherArea', gz_crusher_area)
+    seq.set_definition('NumberOfSliceEncodingSteps', n_slice_encoding)
+    seq.set_definition('NumberOfReadoutSteps', n_readout)
+    seq.set_definition('NumberOfPhaseEncodingSteps', n_phase_encoding)
+    seq.set_definition('Undersampling', n_readout / n_phase_encoding)
+    seq.set_definition('NumberOfEchoes', n_echoes)
+    seq.set_definition('SystemLimits', system.__dict__)
+    
 
     # save seq-file to disk
     print(f"\nSaving sequence file '{filename}.seq' into folder '{output_path}'.")
     write_sequence(seq, str(output_path / filename), create_signature=True, v141_compatibility=v141_compatibility)
 
     if show_plots:
-        seq.plot(time_range=(0, te_list[-1] * 1.2))
+        seq.plot(time_range=(0, time_to_first_tr_block))
 
     return seq, output_path / filename
 
