@@ -382,12 +382,10 @@ def main(
 
     rf_ref_width_scale_factor = 3.5  # width of refocusing pulse is increased compared to excitation pulse
 
-    # define sequence filename
-    filename = f'{Path(__file__).stem}_{tr}tr_{len(spin_lock_times)}spl'
-    filename += f'_{spin_lock_amplitude * 1000000}splAmp'
-    filename += f'_{int(fov_xy * 1000)}fov_xy_{int(fov_z * 1000)}_fov_z'
-    
-    # filename += f'{n_readout}nx_{n_phase_encoding}ny_{n_slice_encoding}nz'
+    filename = (
+                f'{Path(__file__).stem}_{int(fov_xy * 1000)}fov_{n_readout}nx_{n_phase_encoding}ny_'
+                f'{len(spin_lock_times)}TSLs'
+            )
 
     output_path = Path.cwd() / 'output'
     output_path.mkdir(parents=True, exist_ok=True)
@@ -445,7 +443,7 @@ def main(
     seq.set_definition('TE', te_list.tolist())
     seq.set_definition('TR', tr)
     seq.set_definition('ReadoutOversamplingFactor', readout_oversampling)
-    seq.set_definition('SpinLockTimes', spin_lock_times.tolist())
+    seq.set_definition('SpinLockTimes', spin_lock_times)
     seq.set_definition('SpinLockSpoilerRampTime', spin_lock_spoiler_ramp_time)
     seq.set_definition('SpinLockSpoilerFlatTime', spin_lock_spoiler_flat_time)
     seq.set_definition('AddSpinLockSpoiler', add_spin_lock_spoiler)
@@ -464,7 +462,16 @@ def main(
     seq.set_definition('NumberOfPhaseEncodingSteps', n_phase_encoding)
     seq.set_definition('Undersampling', n_readout / n_phase_encoding)
     seq.set_definition('NumberOfEchoes', n_echoes)
-    seq.set_definition('SystemLimits', system.__dict__)
+    seq.set_definition('SystemLimits-MaxGrad', system.max_grad)
+    seq.set_definition('SystemLimits-MaxSlew', system.max_slew)
+    seq.set_definition('SystemLimits-RFRingdownTime', system.rf_ringdown_time)
+    seq.set_definition('SystemLimits-RFDeadTime', system.rf_dead_time)
+    seq.set_definition('SystemLimits-GradRasterTime', system.grad_raster_time)
+    seq.set_definition('SystemLimits-ADCRasterTime', system.adc_raster_time)
+    seq.set_definition('SystemLimits-RFRasterTime', system.rf_raster_time)
+    seq.set_definition('SystemLimits-BlockDurationRaster', system.block_duration_raster)
+    seq.set_definition('SystemLimits-Gamma', system.gamma)
+    seq.set_definition('SystemLimits-B0', system.B0)
     
 
     # save seq-file to disk

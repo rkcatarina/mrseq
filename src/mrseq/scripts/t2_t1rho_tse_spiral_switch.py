@@ -554,7 +554,7 @@ def main(
     seq.set_definition('ReadoutOversamplingFactor', readout_oversampling)
     seq.set_definition('SpiralType', spiral_type)
     seq.set_definition('T1rhoPrepType', prep_type)
-    seq.set_definition('SpinLockTimes', spin_lock_times.tolist())
+    seq.set_definition('SpinLockTimes', spin_lock_times)
     seq.set_definition('AdiabaticRFDuration', adiabatic_rf_duration)
     seq.set_definition('AdiabaticRFAmplitude', adiabatic_rf_amplitude)
     seq.set_definition('AdiabaticPulseGap', adiabatic_pulse_gap)    
@@ -576,7 +576,16 @@ def main(
     seq.set_definition('NumberOfSpiralArms', n_spiral_arms)
     seq.set_definition('SpiralUndersampling', n_readout / n_spiral_arms)
     seq.set_definition('NumberOfEchoes', n_echoes)
-    seq.set_definition('SystemLimits', system.__dict__)
+    seq.set_definition('SystemLimits-MaxGrad', system.max_grad)
+    seq.set_definition('SystemLimits-MaxSlew', system.max_slew)
+    seq.set_definition('SystemLimits-RFRingdownTime', system.rf_ringdown_time)
+    seq.set_definition('SystemLimits-RFDeadTime', system.rf_dead_time)
+    seq.set_definition('SystemLimits-GradRasterTime', system.grad_raster_time)
+    seq.set_definition('SystemLimits-ADCRasterTime', system.adc_raster_time)
+    seq.set_definition('SystemLimits-RFRasterTime', system.rf_raster_time)
+    seq.set_definition('SystemLimits-BlockDurationRaster', system.block_duration_raster)
+    seq.set_definition('SystemLimits-Gamma', system.gamma)
+    seq.set_definition('SystemLimits-B0', system.B0)
     
     # save seq-file to disk
     print(f"\nSaving sequence file '{filename}.seq' into folder '{output_path}'.")
@@ -590,6 +599,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main(tr=1,spin_lock_times = (0,),spiral_type='out', v141_compatibility=True)
+    main(tr=1,spin_lock_times = np.array([0.03,0.06]),show_plots=True,spiral_type='out', v141_compatibility=True)
 
 #spin_lock_times = np.array([0.02, 0.04, 0.06])

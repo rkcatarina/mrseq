@@ -513,7 +513,7 @@ def main(
     seq.set_definition('TR', tr)
     seq.set_definition('ReadoutOversamplingFactor', readout_oversampling)
     seq.set_definition('T1rhoPrepType', prep_type)
-    seq.set_definition('SpinLockTimes', spin_lock_times.tolist())
+    seq.set_definition('SpinLockTimes', spin_lock_times)
     seq.set_definition('AdiabaticRFDuration', adiabatic_rf_duration)
     seq.set_definition('AdiabaticRFAmplitude', adiabatic_rf_amplitude)
     seq.set_definition('AdiabaticPulseGap', adiabatic_pulse_gap)    
@@ -535,7 +535,16 @@ def main(
     seq.set_definition('NumberOfPhaseEncodingSteps', n_phase_encoding)
     seq.set_definition('Undersampling', n_readout / n_phase_encoding)
     seq.set_definition('NumberOfEchoes', n_echoes)
-    seq.set_definition('SystemLimits', system.__dict__)
+    seq.set_definition('SystemLimits-MaxGrad', system.max_grad)
+    seq.set_definition('SystemLimits-MaxSlew', system.max_slew)
+    seq.set_definition('SystemLimits-RFRingdownTime', system.rf_ringdown_time)
+    seq.set_definition('SystemLimits-RFDeadTime', system.rf_dead_time)
+    seq.set_definition('SystemLimits-GradRasterTime', system.grad_raster_time)
+    seq.set_definition('SystemLimits-ADCRasterTime', system.adc_raster_time)
+    seq.set_definition('SystemLimits-RFRasterTime', system.rf_raster_time)
+    seq.set_definition('SystemLimits-BlockDurationRaster', system.block_duration_raster)
+    seq.set_definition('SystemLimits-Gamma', system.gamma)
+    seq.set_definition('SystemLimits-B0', system.B0)
 
 
     # save seq-file to disk
