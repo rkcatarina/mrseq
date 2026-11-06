@@ -395,7 +395,7 @@ def main(
     readout_oversampling: Literal[1, 2, 4] = 2,
     n_spiral_arms: int = 50,
     n_slice_encoding: int = 1,
-    show_plots: bool = True,
+    show_plots: bool = False,
     test_report: bool = True,
     timing_check: bool = True,
     v141_compatibility: bool = True,
@@ -487,7 +487,7 @@ def main(
     # define sequence filename
     filename = (
         f'{Path(__file__).stem}_{prep_type}_{spiral_type}_{int(fov_xy * 1000)}fov_{n_readout}nx_{n_spiral_arms}ny_'
-        f'{len(spin_lock_times)}TSLs_{spin_lock_amplitude*1000000}splAmp'
+        f'{len(spin_lock_times)}TSLs'
     )
 
 
@@ -599,6 +599,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main(tr=1,spin_lock_times = np.array([0.03,0.06]),show_plots=True,spiral_type='out', v141_compatibility=True)
+    main(tr=1,prep_type='adiabatic',spin_lock_times = np.array([0.03, 0.06]),spiral_type='out', v141_compatibility=True)
 
 #spin_lock_times = np.array([0.02, 0.04, 0.06])

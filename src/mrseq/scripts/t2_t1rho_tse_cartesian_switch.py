@@ -357,7 +357,7 @@ def main(
     readout_oversampling: Literal[1, 2, 4] = 2,
     n_phase_encoding: int = 200,
     n_slice_encoding: int = 1,
-    show_plots: bool = True,
+    show_plots: bool = False,
     test_report: bool = True,
     timing_check: bool = True,
     v141_compatibility: bool = True,
@@ -558,6 +558,6 @@ def main(
 
 
 if __name__ == '__main__':
-    main(tr=1,spin_lock_times = (0,), v141_compatibility=True)
+    main(tr=1,prep_type='adiabatic',spin_lock_times = np.array([0.03, 0.06]), v141_compatibility=True)
 
 #spin_lock_times = np.array([0.02, 0.04, 0.06])
